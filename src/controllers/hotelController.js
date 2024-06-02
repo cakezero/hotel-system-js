@@ -1,0 +1,3 @@
+
+
+export { hotel, hotels }

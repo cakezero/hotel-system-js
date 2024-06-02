@@ -2,6 +2,11 @@
   "name": "hotel-system-js",
   "module": "server.js",
   "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "nodemon server.js",
+    "prod": "nodemon bin/www.js"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
