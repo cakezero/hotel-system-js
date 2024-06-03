@@ -16,14 +16,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(helmet());
 
-// Universal middleware
-app.use("*", checkUser);
-
 // User Routes
 app.use("/api/v1", userRoutes);
 
 // Hotel Routes
-app.use("/api/v2", hotelRoutes);
+app.use("/api/v2", checkUser, hotelRoutes);
 
 // Admin Routes
 app.use("/api/v3", isAdmin, adminRoutes);

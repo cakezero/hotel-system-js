@@ -7,6 +7,8 @@ import {
   registerEmail,
   loginEmail,
   resetEmail,
+  verifyEmail,
+  sendVerificationSuccessEmail,
 } from "../utils/sendMail.js";
 import { nanoid } from "nanoid";
 import JWT from "../utils/jwt.js";
@@ -53,7 +55,7 @@ const register = async (req, res) => {
     const payload = { user };
     const token = await JWT.sign(payload);
 
-    await registerEmail({ user });
+    await registerEmail(user);
 
     return res.status(httpStatus.CREATED).json({
       message: "User created successfully",
@@ -62,7 +64,7 @@ const register = async (req, res) => {
   } catch (error) {
     logger.error(`Error during register: ${error}`);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: "Something went wrong!"
+      error: "Something went wrong!",
     });
   }
 };
@@ -103,14 +105,14 @@ const login = async (req, res) => {
       return res
         .status(httpStatus.BAD_REQUEST)
         .json({ error: "Login credentials does not match or does not exist!" });
-    
-    const payload = { user };
-    const token = await JWT.sign(payload);
 
-    await loginEmail({ user });
+    const token = await JWT.sign(user);
+
+    await loginEmail(user);
 
     return res.status(httpStatus.FOUND).json({
-      message: "User logged in successfully", token
+      message: "User logged in successfully",
+      token,
     });
   } catch (error) {
     logger.error(`Error during login: ${error}`);
@@ -135,7 +137,7 @@ const forgotPassword = async (req, res) => {
     user.otp = otp;
     await user.save();
 
-    await forgotEmail({ email }, otp);
+    await forgotEmail(user, otp);
 
     return res.status(httpStatus.OK).json({ message: "OTP has been sent!" });
   } catch (error) {
@@ -191,7 +193,7 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    await resetEmail({ user });
+    await resetEmail(user);
     return res
       .status(httpStatus.OK)
       .json({ message: "Password has been changed successfully!" });
@@ -203,4 +205,65 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { register, login, forgotPassword, verifyOtp, resetPassword };
+const VerifyEmail = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user)
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: "user does not exist" });
+    const otp = nanoid(4);
+
+    user.otp = otp;
+    await user.save();
+
+    await verifyEmail(user, otp);
+    return res
+      .status(httpStatus.OK)
+      .json({ message: "Email verification otp sent" });
+  } catch (error) {
+    logger.error(`Error sending email verification: ${error}`);
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR)
+      .json({ error: "Something went wrong!" });
+  }
+};
+
+const validateEmail = async (req, res) => {
+  const { otp } = req.body;
+
+  try {
+    const user = await User.findOne({ otp });
+    if (!user)
+      return res
+        .status(httpStatus.BAD_REQUEST)
+        .json({ error: "OTP is expired or incorrect" });
+
+    user.confirmedEmail = true;
+    user.otp = null;
+    await user.save();
+
+    await sendVerificationSuccessEmail(user);
+
+    return res
+      .status(httpStatus.OK)
+      .json({ message: "email address has been verified" });
+  } catch (error) {
+    logger.error(`Error validating email: ${error}`);
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR)
+      .json({ error: "Something went wrong" });
+  }
+};
+
+export {
+  register,
+  login,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
+  VerifyEmail,
+  validateEmail,
+};

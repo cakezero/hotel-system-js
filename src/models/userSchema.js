@@ -38,9 +38,14 @@ const UserSchema = new mongoose.Schema({
     type: String,
     expires: 3600
   },
-  isAdmin: {
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
+  confirmedEmail: {
     type: Boolean,
-    default: false,
+    default: false
   }
   }, { timestamps: true });
 
