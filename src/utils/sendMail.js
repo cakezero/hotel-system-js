@@ -342,6 +342,80 @@ const sendVerificationSuccessEmail = async (user = {}) => {
   }
 };
 
+const adminSuccessEmail = async (user = {}, admin = {}) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: env.EMAIL_SERVICE,
+      secure: true,
+      auth: {
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASSWORD,
+      },
+    });
+
+    const options = {
+      viewEngine: {
+        partialsDir: path.resolve(__dirname, "../utils/template"),
+        defaultLayout: false,
+      },
+      viewPath: path.resolve(__dirname, "../utils/template"),
+    };
+
+    transporter.use("compile", hbs(options));
+
+    await transporter.sendMail({
+      from: env.EMAIL_USER,
+      to: user.email,
+      template: "admin_success",
+      subject: "You Have Been Made An Admin",
+      context: {
+        user: user.user_name,
+        admin: admin.user_name
+      },
+    });
+  } catch (error) {
+    logger.error(`An error occured while sending mail: ${error}`);
+    throw new Error(`Error sending mail`);
+  }
+}
+
+const adminSuccessSendEmail = async (user = {}, admin = {}) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: env.EMAIL_SERVICE,
+      secure: true,
+      auth: {
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASSWORD,
+      },
+    });
+
+    const options = {
+      viewEngine: {
+        partialsDir: path.resolve(__dirname, "../utils/template"),
+        defaultLayout: false,
+      },
+      viewPath: path.resolve(__dirname, "../utils/template"),
+    };
+
+    transporter.use("compile", hbs(options));
+
+    await transporter.sendMail({
+      from: env.EMAIL_USER,
+      to: user.email,
+      template: "admin_success_send",
+      subject: "You Have Made A User An Admin",
+      context: {
+        user: user.user_name,
+        admin: admin.user_name,
+        email: admin.email
+      },
+    });
+  } catch (error) {
+    logger.error(`An error occured while sending mail: ${error}`);
+    throw new Error(`Error sending mail`);
+  }
+};
 export {
   forgotEmail,
   registerEmail,
@@ -352,4 +426,6 @@ export {
   deleteAdminEmail,
   confirmAdminDelete,
   sendVerificationSuccessEmail,
+  adminSuccessSendEmail,
+  adminSuccessEmail
 };

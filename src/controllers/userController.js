@@ -20,6 +20,7 @@ import {
 } from "../validation/authValidationSchema.js";
 import isEmail from "validator/lib/isEmail.js";
 import { getUser } from "../middlewares/authMiddleware.js";
+import removedUser from "../models/removedSchema.js";
 
 const register = async (req, res) => {
   try {
@@ -31,6 +32,18 @@ const register = async (req, res) => {
     }
 
     const { user_name, email, password } = req.body;
+
+    const emailRemoved = await removedUser.findOne({ email });
+    if (emailRemoved)
+      return res
+        .status(httpStatus.FORBIDDEN)
+        .json({ error: "Email has been banned" });
+
+    const userRemoved = await removedUser.findOne({ user_name });
+    if (userRemoved)
+      return res
+        .status(httpStatus.FORBIDDEN)
+        .json({ error: "Username has been banned" });
 
     const registeredUser = await User.findOne(
       { $or: [{ email }, { user_name }] },
