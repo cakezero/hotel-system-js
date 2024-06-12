@@ -416,6 +416,51 @@ const adminSuccessSendEmail = async (user = {}, admin = {}) => {
     throw new Error(`Error sending mail`);
   }
 };
+
+const sendHotelRequest = async (user = {}, hotel = {}, admins = {}) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: env.EMAIL_SERVICE,
+      secure: true,
+      auth: {
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASSWORD,
+      },
+    });
+
+    const options = {
+      viewEngine: {
+        partialsDir: path.resolve(__dirname, "../utils/template"),
+        defaultLayout: false,
+      },
+      viewPath: path.resolve(__dirname, "../utils/template"),
+    };
+
+    transporter.use("compile", hbs(options));
+
+    admins.forEach(async (admin) => {
+      
+      await transporter.sendMail({
+        from: env.EMAIL_USER,
+        to: user.email,
+        template: "hotel_request",
+        subject: "Add Hotel Request",
+        context: {
+          user: user.user_name,
+          hotel: hotel.user_name,
+          email: user.email,
+          hotel: hotel.rooms,
+          admin: admin.user_name
+        },
+      });
+    })
+    
+  } catch (error) {
+    logger.error(`An error occured while sending mail: ${error}`);
+    throw new Error(`Error sending mail`);
+  }
+}
+
 export {
   forgotEmail,
   registerEmail,
@@ -427,5 +472,6 @@ export {
   confirmAdminDelete,
   sendVerificationSuccessEmail,
   adminSuccessSendEmail,
-  adminSuccessEmail
+  adminSuccessEmail,
+  sendHotelRequest
 };

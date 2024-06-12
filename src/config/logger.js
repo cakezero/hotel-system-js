@@ -1,7 +1,7 @@
 import winston from "winston";
+import env from "../utils/env.js"
 
-const environment = process.env.ENV;
-
+const environment = env.ENV
 const enumerateErrorFormat = winston.format((info) => {
 	if (info instanceof Error) {
 		Object.assign(info, { message: info.stack });

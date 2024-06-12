@@ -9,6 +9,7 @@ import {
   resetEmail,
   verifyEmail,
   sendVerificationSuccessEmail,
+  sendHotelRequest,
 } from "../utils/sendMail.js";
 import { nanoid } from "nanoid";
 import JWT from "../utils/jwt.js";
@@ -20,7 +21,8 @@ import {
 } from "../validation/authValidationSchema.js";
 import isEmail from "validator/lib/isEmail.js";
 import { getUser } from "../middlewares/authMiddleware.js";
-import removedUser from "../models/removedSchema.js";
+import { removedEmail, removedUser } from "../models/removedSchema.js";
+import Hotel from "../models/hotelSchema.js";
 
 const register = async (req, res) => {
   try {
@@ -33,16 +35,16 @@ const register = async (req, res) => {
 
     const { user_name, email, password } = req.body;
 
-    const emailRemoved = await removedUser.findOne({ email });
+    const emailRemoved = await removedEmail.find({ email });
     if (emailRemoved)
       return res
-        .status(httpStatus.FORBIDDEN)
+        .status(httpStatus.BAD_REQUEST)
         .json({ error: "Email has been banned" });
 
-    const userRemoved = await removedUser.findOne({ user_name });
+    const userRemoved = await removedUser.find({ user_name });
     if (userRemoved)
       return res
-        .status(httpStatus.FORBIDDEN)
+        .status(httpStatus.BAD_REQUEST)
         .json({ error: "Username has been banned" });
 
     const registeredUser = await User.findOne(
@@ -153,6 +155,32 @@ const forgotPassword = async (req, res) => {
     await forgotEmail(user, otp);
 
     return res.status(httpStatus.OK).json({ message: "OTP has been sent!" });
+  } catch (error) {
+    logger.error(`Error during forgot password: ${error}`);
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR)
+      .json({ error: "Something went wrong" });
+  }
+};
+
+const requestHotel = async (req, res) => {
+  const hotel = req.body;
+  const user = req.user;
+
+  try {
+    const hotelCheck = await Hotel.findOne({ hotel_name: hotel.hotel_name });
+    if (hotelCheck)
+      return res
+        .status(httpStatus.BAD_REQUEST)
+        .json({ error: "Hotel name already exist" });
+
+    const admins = await User.find({ role: "admin" });
+
+    await sendHotelRequest(user, hotel, admins);
+
+    return res
+      .status(httpStatus.OK)
+      .json({ message: "Hotel request has been sent!" });
   } catch (error) {
     logger.error(`Error during forgot password: ${error}`);
     return res

@@ -41,11 +41,13 @@ const add_hotel = async (req, res) => {
 const delete_hotel = async (req, res) => {
   const hotel_name = req.params.hotel;
   try {
-    const hotelCheck = await Hotel.findOneAndDelete({ hotel_name });
+    const hotelCheck = await Hotel.findOne({ hotel_name });
     if (!hotelCheck)
       return res
         .status(httpStatus.NOT_FOUND)
         .json({ error: "Hotel name doesn't exist" });
+    
+    await Hotel.findOneAndDelete({ hotel_name })
 
     return res
       .status(httpStatus.OK)
